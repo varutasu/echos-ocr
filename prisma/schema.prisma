@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model ResponseCard {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Personal Info (Response Card side)
+  name               String?
+  gender             String?
+  dateOfBirth        String?
+  maritalStatus      String?
+  maritalStatusOther String?
+  visitType          String?
+  cellPhone          String?
+  homePhone          String?
+  email              String?
+  address            String?
+  aptNumber          String?
+  city               String?
+  state              String?
+  zip                String?
+  prayerRequests     String?
+  prayerForTeam      Boolean @default(false)
+  prayerConfidential Boolean @default(false)
+
+  // Survey Info (Easter Survey side)
+  messageTopics         Json?
+  messageTopicsOther    String?
+  nextStep              Json?
+  attendanceDuration    String?
+  campusPreference      Json?
+  campusPreferenceOther String?
+  howHeard              Json?
+  howHeardOther         String?
+  serviceAttended       String?
+
+  // Meta
+  sourceFile     String?
+  frontImagePath String?
+  backImagePath  String?
+  ocrStatus      String  @default("pending")
+  reviewStatus   String  @default("unreviewed")
+  ocrConfidence  Float?
+  ocrError       String?
+  rawOcrResponse Json?
+
+  @@index([ocrStatus])
+  @@index([reviewStatus])
+  @@index([name])
+  @@index([createdAt])
+}
+
+model ProcessingJob {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  fileName   String
+  filePath   String
+  status     String   @default("queued")
+  totalPages Int      @default(0)
+  processed  Int      @default(0)
+  error      String?
+  cardIds    Json?
+
+  @@index([status])
+}
+
+model AppSettings {
+  id        String @id @default("singleton")
+  ollamaUrl String @default("http://192.168.68.108:11434")
+  model     String @default("llava:7b")
+  watchDir  String @default("")
+  watching  Boolean @default(false)
+}

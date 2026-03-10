@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Echo OCR
 
-## Getting Started
+OCR-powered response card scanner and management tool for Echo Life Church.
 
-First, run the development server:
+Scans front/back of paper response cards (PDF or images), extracts structured data using a local Ollama vision model, stores results in PostgreSQL, and serves them through a modern filterable table UI.
+
+## Stack
+
+- **Next.js 15** (App Router) + **Tailwind CSS v4** + **shadcn/ui**
+- **TanStack Table** for data tables with filtering, sorting, pagination
+- **Prisma** + **PostgreSQL** for data storage
+- **Ollama** (local LLM) for OCR via vision models (LLaVA 7B recommended)
+- **MinIO** (S3-compatible) for PDF/image storage
+- **Docker** for deployment via Coolify
+
+## Local Development
+
+### Prerequisites
+
+- Node.js 18+
+- Docker + Docker Compose (for PostgreSQL + MinIO)
+- Ollama running locally with a vision model (`ollama pull llava:7b`)
+- GraphicsMagick (`brew install graphicsmagick`) for PDF-to-image conversion
+
+### Setup
 
 ```bash
+# Install dependencies
+npm install
+
+# Start local PostgreSQL + MinIO
+docker compose up -d postgres minio
+
+# Create MinIO bucket (visit http://localhost:9001, login minioadmin/minioadmin)
+
+# Push database schema
+npm run db:push
+
+# Start dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy `.env.example` to `.env` and configure:
 
-## Learn More
+```bash
+cp .env.example .env
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment (Coolify)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+See the deployment section in the project plan for step-by-step Coolify setup instructions including PostgreSQL, MinIO bucket creation, Ollama configuration, and Traefik routing.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## API Endpoints
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/cards` | List cards (filters, pagination, search) |
+| POST | `/api/cards` | Create a card |
+| GET | `/api/cards/[id]` | Get card with presigned image URLs |
+| PUT | `/api/cards/[id]` | Update card fields |
+| DELETE | `/api/cards/[id]` | Delete card and images |
+| POST | `/api/cards/[id]/export` | Mark card as exported |
+| POST | `/api/upload` | Upload PDF/images for OCR |
+| GET | `/api/jobs` | List processing jobs |
+| GET | `/api/stats` | Card count statistics |
+| GET/PUT | `/api/settings` | App settings |
+| POST | `/api/watch` | Start/stop folder monitoring |
+| GET | `/api/images/[...path]` | Proxy images from MinIO |

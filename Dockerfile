@@ -18,6 +18,11 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate && npm run build
 
+# Standalone prisma install for runtime db push
+FROM base AS prisma-cli
+WORKDIR /tmp/prisma
+RUN npm init -y > /dev/null 2>&1 && npm install --ignore-scripts prisma dotenv @prisma/adapter-pg 2>/dev/null
+
 FROM base AS runner
 WORKDIR /app
 
@@ -32,10 +37,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/dotenv ./node_modules/dotenv
 COPY --from=builder /app/start.sh ./start.sh
+
+# Merge prisma CLI + deps into node_modules (alongside standalone deps)
+COPY --chown=nextjs:nodejs --from=prisma-cli /tmp/prisma/node_modules ./node_modules
 
 RUN mkdir -p /data/watch && chown -R nextjs:nodejs /data
 

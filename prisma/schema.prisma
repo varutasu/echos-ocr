@@ -79,4 +79,7 @@ model AppSettings {
   model     String @default("llava:7b")
   watchDir  String @default("")
   watching  Boolean @default(false)
+
+  sourceRetentionDays Int @default(30)
+  imageRetentionDays  Int @default(180)
 }

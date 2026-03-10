@@ -33,6 +33,8 @@ export async function PUT(request: NextRequest) {
     if (body.model != null) data.model = String(body.model);
     if (body.watchDir != null) data.watchDir = String(body.watchDir);
     if (body.watching != null) data.watching = Boolean(body.watching);
+    if (body.sourceRetentionDays != null) data.sourceRetentionDays = Math.max(1, parseInt(String(body.sourceRetentionDays)) || 30);
+    if (body.imageRetentionDays != null) data.imageRetentionDays = Math.max(1, parseInt(String(body.imageRetentionDays)) || 180);
 
     const settings = await prisma.appSettings.upsert({
       where: { id: "singleton" },

@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || "192.168.68.105";
@@ -43,4 +43,25 @@ export async function deleteObject(key: string): Promise<void> {
   await s3.send(
     new DeleteObjectCommand({ Bucket: BUCKET, Key: key })
   );
+}
+
+export async function listObjects(prefix: string): Promise<string[]> {
+  const keys: string[] = [];
+  let continuationToken: string | undefined;
+
+  do {
+    const res = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: BUCKET,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      })
+    );
+    for (const obj of res.Contents ?? []) {
+      if (obj.Key) keys.push(obj.Key);
+    }
+    continuationToken = res.NextContinuationToken;
+  } while (continuationToken);
+
+  return keys;
 }

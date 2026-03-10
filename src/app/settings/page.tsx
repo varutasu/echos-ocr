@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Wifi, WifiOff } from "lucide-react";
+import { Loader2, Save, Wifi, WifiOff, Trash2 } from "lucide-react";
 
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ type Settings = {
   model: string;
   watchDir: string;
   watching: boolean;
+  sourceRetentionDays: number;
+  imageRetentionDays: number;
 };
 
 export default function SettingsPage() {
@@ -24,10 +26,23 @@ export default function SettingsPage() {
     model: "",
     watchDir: "",
     watching: false,
+    sourceRetentionDays: 30,
+    imageRetentionDays: 180,
   });
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [ollamaStatus, setOllamaStatus] = React.useState<"unknown" | "connected" | "error">("unknown");
+  const [cleanupStatus, setCleanupStatus] = React.useState<{ sourcesEligible: number; imagesEligible: number } | null>(null);
+  const [cleaning, setCleaning] = React.useState(false);
+
+  const fetchCleanupStatus = React.useCallback(() => {
+    fetch("/api/cleanup")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.sourcesEligible !== undefined) setCleanupStatus(data);
+      })
+      .catch(() => {});
+  }, []);
 
   React.useEffect(() => {
     fetch("/api/settings")
@@ -39,7 +54,8 @@ export default function SettingsPage() {
       .catch(() => {
         setLoading(false);
       });
-  }, []);
+    fetchCleanupStatus();
+  }, [fetchCleanupStatus]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -91,6 +107,27 @@ export default function SettingsPage() {
       toast.success(action === "start" ? "Folder watching started" : "Folder watching stopped");
     } catch {
       toast.error("Failed to toggle folder watching");
+    }
+  };
+
+  const runCleanup = async () => {
+    setCleaning(true);
+    try {
+      const res = await fetch("/api/cleanup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun: false }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      toast.success(
+        `Cleanup complete: ${data.sourcesDeleted} source files, ${data.imagesDeleted} images, ${data.jobsPurged} jobs removed`
+      );
+      fetchCleanupStatus();
+    } catch {
+      toast.error("Cleanup failed");
+    } finally {
+      setCleaning(false);
     }
   };
 
@@ -198,8 +235,80 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Storage & Cleanup */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Storage & Cleanup</CardTitle>
+            <CardDescription>Auto-purge uploaded files and images to save storage</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                Source PDF Retention (days)
+              </Label>
+              <Input
+                type="number"
+                min={1}
+                value={settings.sourceRetentionDays}
+                onChange={(e) =>
+                  setSettings((s) => ({
+                    ...s,
+                    sourceRetentionDays: parseInt(e.target.value) || 30,
+                  }))
+                }
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Original uploaded PDFs are deleted after this many days. Card data is kept.
+              </p>
+            </div>
+            <div>
+              <Label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                Image Retention (days)
+              </Label>
+              <Input
+                type="number"
+                min={1}
+                value={settings.imageRetentionDays}
+                onChange={(e) =>
+                  setSettings((s) => ({
+                    ...s,
+                    imageRetentionDays: parseInt(e.target.value) || 180,
+                  }))
+                }
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Scanned card images are removed after this many days. Card data is kept.
+              </p>
+            </div>
+            <div className="rounded-lg border bg-muted/50 p-3">
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
+                  {cleanupStatus ? (
+                    <>
+                      <span className="font-medium">{cleanupStatus.sourcesEligible}</span> source files
+                      {" and "}
+                      <span className="font-medium">{cleanupStatus.imagesEligible}</span> card images eligible
+                    </>
+                  ) : (
+                    "Checking..."
+                  )}
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={runCleanup}
+                  disabled={cleaning || !cleanupStatus || (cleanupStatus.sourcesEligible === 0 && cleanupStatus.imagesEligible === 0)}
+                >
+                  {cleaning ? <Loader2 className="mr-2 size-3 animate-spin" /> : <Trash2 className="mr-2 size-3" />}
+                  Run Cleanup Now
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Monday.com Integration (placeholder) */}
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Monday.com Integration</CardTitle>
             <CardDescription>Push scanned card data to Monday.com boards (coming soon)</CardDescription>

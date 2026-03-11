@@ -28,13 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { ResponseCard } from "./columns";
@@ -120,6 +114,7 @@ export function DataTable<TData extends ResponseCard>({
     x: number;
     y: number;
   } | null>(null);
+  const contextMenuRef = React.useRef<HTMLDivElement>(null);
 
   const table = useReactTable({
     data,
@@ -185,7 +180,15 @@ export function DataTable<TData extends ResponseCard>({
 
   React.useEffect(() => {
     if (!contextMenu) return;
-    const close = () => setContextMenu(null);
+    const close = (e: MouseEvent) => {
+      if (
+        contextMenuRef.current &&
+        contextMenuRef.current.contains(e.target as Node)
+      ) {
+        return;
+      }
+      setContextMenu(null);
+    };
     window.addEventListener("click", close);
     window.addEventListener("contextmenu", close);
     return () => {
@@ -463,35 +466,30 @@ export function DataTable<TData extends ResponseCard>({
 
       {/* Right-click column visibility context menu */}
       {contextMenu && (
-        <DropdownMenu
-          open={true}
-          onOpenChange={(open) => {
-            if (!open) setContextMenu(null);
-          }}
+        <div
+          ref={contextMenuRef}
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          className="fixed z-50 min-w-[180px] rounded-lg bg-popover p-1 text-popover-foreground shadow-lg ring-1 ring-foreground/10 animate-in fade-in-0 zoom-in-95"
         >
-          <DropdownMenuContent
-            style={{
-              position: "fixed",
-              left: contextMenu.x,
-              top: contextMenu.y,
-            }}
-            className="w-48"
-          >
-            <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {TOGGLEABLE_COLUMNS.map((col) => (
-              <DropdownMenuCheckboxItem
-                key={col.id}
+          <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+            Toggle Columns
+          </div>
+          <div className="my-1 h-px bg-border" />
+          {TOGGLEABLE_COLUMNS.map((col) => (
+            <label
+              key={col.id}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+            >
+              <Checkbox
                 checked={isColumnVisible(col.id)}
                 onCheckedChange={(checked) =>
                   toggleColumn(col.id, checked !== false)
                 }
-              >
-                {col.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              />
+              {col.label}
+            </label>
+          ))}
+        </div>
       )}
     </div>
   );

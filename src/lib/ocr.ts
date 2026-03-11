@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { Prisma } from "@/generated/prisma/client";
 import { uploadBuffer, getBuffer, deleteObject } from "./minio";
 import { ocrImage } from "./ai-ocr";
 import { pdfToImages, imageToBase64, processUploadedImage } from "./pdf";
@@ -266,7 +267,7 @@ export async function reprocessJob(jobId: string): Promise<void> {
 
   await prisma.processingJob.update({
     where: { id: jobId },
-    data: { status: "queued", processed: 0, error: null, cardIds: null },
+    data: { status: "queued", processed: 0, error: null, cardIds: Prisma.DbNull },
   });
 
   await processFile(jobId, job.fileName, fileBuffer, isPdf);

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import {
   type ColumnDef,
   type SortingState,
@@ -15,9 +16,7 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
-  CheckCircle,
-  Download,
-  Trash2,
+  Loader2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -29,7 +28,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import type { ResponseCard } from "./columns";
+import type { UploadingFile } from "./upload-modal";
+
+const TOGGLEABLE_COLUMNS = [
+  { id: "thumbnail", label: "Thumbnail" },
+  { id: "name", label: "Name" },
+  { id: "email", label: "Email" },
+  { id: "cellPhone", label: "Phone" },
+  { id: "location", label: "Location" },
+  { id: "visitType", label: "Visit Type" },
+  { id: "attendanceDuration", label: "Attendance" },
+  { id: "serviceAttended", label: "Service" },
+  { id: "ocrStatus", label: "OCR Status" },
+  { id: "reviewStatus", label: "Review" },
+  { id: "ocrConfidence", label: "Confidence" },
+] as const;
 
 type DataTableProps<TData> = {
   data: TData[];
@@ -39,14 +62,13 @@ type DataTableProps<TData> = {
   limit: number;
   onPageChange?: (page: number) => void;
   onLimitChange?: (limit: number) => void;
-  onBulkMarkReviewed?: (ids: string[]) => void;
-  onBulkMarkExported?: (ids: string[]) => void;
-  onBulkDelete?: (ids: string[]) => void;
   columnVisibility?: VisibilityState;
   onColumnVisibilityChange?: (visibility: VisibilityState) => void;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   onSortChange?: (sortBy: string, sortOrder: "asc" | "desc") => void;
+  uploadingRows?: UploadingFile[];
+  onSelectionChange?: (selectedIds: string[]) => void;
 };
 
 const PAGE_SIZES = [10, 20, 50, 100];
@@ -59,15 +81,16 @@ export function DataTable<TData extends ResponseCard>({
   limit,
   onPageChange,
   onLimitChange,
-  onBulkMarkReviewed,
-  onBulkMarkExported,
-  onBulkDelete,
   columnVisibility: controlledVisibility,
   onColumnVisibilityChange,
   sortBy: controlledSortBy,
   sortOrder: controlledSortOrder,
   onSortChange,
+  uploadingRows = [],
+  onSelectionChange,
 }: DataTableProps<TData>) {
+  const router = useRouter();
+
   const sorting: SortingState =
     controlledSortBy && controlledSortOrder
       ? [{ id: controlledSortBy, desc: controlledSortOrder === "desc" }]
@@ -92,6 +115,11 @@ export function DataTable<TData extends ResponseCard>({
     controlledVisibility !== undefined ? controlledVisibility : internalVisibility;
   const setVisibility =
     onColumnVisibilityChange ?? setInternalVisibility;
+
+  const [contextMenu, setContextMenu] = React.useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   const table = useReactTable({
     data,
@@ -122,8 +150,14 @@ export function DataTable<TData extends ResponseCard>({
   });
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
-  const selectedCount = selectedRows.length;
-  const selectedIds = selectedRows.map((r) => r.original.id);
+  const selectedIds = React.useMemo(
+    () => selectedRows.map((r) => r.original.id),
+    [selectedRows]
+  );
+
+  React.useEffect(() => {
+    onSelectionChange?.(selectedIds);
+  }, [selectedIds, onSelectionChange]);
 
   const totalPages = Math.ceil(totalCount / limit);
   const canPrev = page > 1;
@@ -131,67 +165,54 @@ export function DataTable<TData extends ResponseCard>({
   const start = (page - 1) * limit + 1;
   const end = Math.min(page * limit, totalCount);
 
+  const handleRowClick = (e: React.MouseEvent, rowId: string) => {
+    const target = e.target as HTMLElement;
+    if (
+      target.closest("button") ||
+      target.closest("input") ||
+      target.closest('[data-slot="checkbox"]') ||
+      target.closest('[data-slot="dropdown-menu"]')
+    ) {
+      return;
+    }
+    router.push(`/cards/${rowId}`);
+  };
+
+  const handleHeaderContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
+
+  React.useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    window.addEventListener("click", close);
+    window.addEventListener("contextmenu", close);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("contextmenu", close);
+    };
+  }, [contextMenu]);
+
+  const isColumnVisible = (id: string) => visibility[id] !== false;
+  const toggleColumn = (id: string, visible: boolean) => {
+    setVisibility({ ...visibility, [id]: visible });
+  };
+
   return (
     <div className="space-y-4">
-      {selectedCount > 0 && (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 glass-card rounded-2xl px-4 py-3">
-          <span className="text-sm font-medium">
-            {selectedCount} row{selectedCount !== 1 ? "s" : ""} selected
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
-            {onBulkMarkReviewed && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                onClick={() => onBulkMarkReviewed(selectedIds)}
-              >
-                <CheckCircle className="mr-1.5 size-4" />
-                Mark Reviewed
-              </Button>
-            )}
-            {onBulkMarkExported && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                onClick={() => onBulkMarkExported(selectedIds)}
-              >
-                <Download className="mr-1.5 size-4" />
-                Mark Exported
-              </Button>
-            )}
-            {onBulkDelete && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => onBulkDelete(selectedIds)}
-              >
-                <Trash2 className="mr-1.5 size-4" />
-                Delete
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="rounded-xl"
-              onClick={() => table.toggleAllPageRowsSelected(false)}
-            >
-              Clear
-            </Button>
-          </div>
-        </div>
-      )}
-
-      <div className="glass-card overflow-hidden rounded-2xl">
+      {/* Desktop table */}
+      <div className="glass-card overflow-hidden rounded-2xl hidden md:block">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader>
+            <TableHeader onContextMenu={handleHeaderContextMenu}>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <TableHead
+                      key={header.id}
+                      className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -204,12 +225,45 @@ export function DataTable<TData extends ResponseCard>({
               ))}
             </TableHeader>
             <TableBody>
+              {uploadingRows.map((uf) => (
+                <TableRow key={uf.id} className="opacity-70">
+                  <TableCell className="px-4 py-3" />
+                  <TableCell className="px-4 py-3" />
+                  <TableCell className="px-4 py-3">
+                    <span className="font-medium text-muted-foreground">
+                      {uf.name}
+                    </span>
+                  </TableCell>
+                  <TableCell className="px-4 py-3" colSpan={6} />
+                  <TableCell className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="size-3.5 animate-spin text-primary" />
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all"
+                            style={{ width: `${uf.progress}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {uf.progress}%
+                        </span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-4 py-3" />
+                  <TableCell className="px-4 py-3" />
+                  <TableCell className="px-4 py-3" />
+                </TableRow>
+              ))}
+
               {table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="transition-colors hover:bg-muted/30"
+                    className="cursor-pointer transition-colors hover:bg-muted/30"
+                    onClick={(e) => handleRowClick(e, row.original.id)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="px-4 py-3">
@@ -222,20 +276,120 @@ export function DataTable<TData extends ResponseCard>({
                   </TableRow>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center text-muted-foreground"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
+                uploadingRows.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center text-muted-foreground"
+                    >
+                      No results.
+                    </TableCell>
+                  </TableRow>
+                )
               )}
             </TableBody>
           </Table>
         </div>
       </div>
 
+      {/* Mobile card layout */}
+      <div className="space-y-3 md:hidden">
+        {uploadingRows.map((uf) => (
+          <div
+            key={uf.id}
+            className="glass-card rounded-2xl p-4 opacity-70"
+          >
+            <div className="flex items-center gap-3">
+              <Loader2 className="size-4 animate-spin text-primary" />
+              <div className="flex-1 min-w-0">
+                <p className="truncate text-sm font-medium">{uf.name}</p>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${uf.progress}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {uf.progress}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => (
+            <div
+              key={row.id}
+              className={cn(
+                "glass-card cursor-pointer rounded-2xl p-4 transition-all hover:shadow-lg active:scale-[0.99]",
+                row.getIsSelected() && "ring-2 ring-primary/30"
+              )}
+              onClick={(e) => handleRowClick(e, row.original.id)}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-sm font-semibold">
+                    {row.original.name ?? "Unnamed"}
+                  </p>
+                  {row.original.email && (
+                    <p className="truncate text-xs text-muted-foreground mt-0.5">
+                      {row.original.email}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      "capitalize text-[10px] px-1.5 py-0.5",
+                      row.original.ocrStatus === "complete"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                        : row.original.ocrStatus === "error"
+                          ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                          : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {row.original.ocrStatus}
+                  </Badge>
+                </div>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                {row.original.cellPhone && (
+                  <span>{row.original.cellPhone}</span>
+                )}
+                {row.original.visitType && (
+                  <span>{row.original.visitType}</span>
+                )}
+                {row.original.ocrConfidence != null && (
+                  <span
+                    className={cn(
+                      "font-medium",
+                      row.original.ocrConfidence >= 75
+                        ? "text-green-600 dark:text-green-400"
+                        : row.original.ocrConfidence >= 50
+                          ? "text-amber-600 dark:text-amber-400"
+                          : "text-red-600 dark:text-red-400"
+                    )}
+                  >
+                    {Math.round(row.original.ocrConfidence)}%
+                  </span>
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          uploadingRows.length === 0 && (
+            <div className="py-12 text-center text-sm text-muted-foreground">
+              No results.
+            </div>
+          )
+        )}
+      </div>
+
+      {/* Pagination */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <span>
@@ -306,6 +460,39 @@ export function DataTable<TData extends ResponseCard>({
           </Button>
         </div>
       </div>
+
+      {/* Right-click column visibility context menu */}
+      {contextMenu && (
+        <DropdownMenu
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setContextMenu(null);
+          }}
+        >
+          <DropdownMenuContent
+            style={{
+              position: "fixed",
+              left: contextMenu.x,
+              top: contextMenu.y,
+            }}
+            className="w-48"
+          >
+            <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {TOGGLEABLE_COLUMNS.map((col) => (
+              <DropdownMenuCheckboxItem
+                key={col.id}
+                checked={isColumnVisible(col.id)}
+                onCheckedChange={(checked) =>
+                  toggleColumn(col.id, checked !== false)
+                }
+              >
+                {col.label}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 }

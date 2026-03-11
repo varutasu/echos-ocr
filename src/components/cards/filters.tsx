@@ -2,16 +2,9 @@
 
 import * as React from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Search, Download, Columns3, SlidersHorizontal } from "lucide-react";
+import { Search, Download, Upload } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -20,72 +13,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-
-const REVIEW_OPTIONS = [
-  { value: "", label: "All" },
-  { value: "unreviewed", label: "Unreviewed" },
-  { value: "reviewed", label: "Reviewed" },
-  { value: "exported", label: "Exported" },
-] as const;
-
-const OCR_OPTIONS = [
-  { value: "", label: "All" },
-  { value: "complete", label: "Complete" },
-  { value: "error", label: "Error" },
-  { value: "pending", label: "Pending" },
-] as const;
-
-const TOGGLEABLE_COLUMNS = [
-  { id: "thumbnail", label: "Thumbnail" },
-  { id: "name", label: "Name" },
-  { id: "email", label: "Email" },
-  { id: "cellPhone", label: "Phone" },
-  { id: "location", label: "Location" },
-  { id: "visitType", label: "Visit Type" },
-  { id: "attendanceDuration", label: "Attendance" },
-  { id: "serviceAttended", label: "Service" },
-  { id: "ocrStatus", label: "OCR Status" },
-  { id: "reviewStatus", label: "Review" },
-  { id: "ocrConfidence", label: "Confidence" },
-] as const;
 
 export type FiltersProps = {
   search?: string;
-  reviewStatus?: string;
-  ocrStatus?: string;
   visitType?: string;
   attendanceDuration?: string;
   serviceAttended?: string;
   visitTypeOptions?: string[];
   attendanceDurationOptions?: string[];
   serviceAttendedOptions?: string[];
-  columnVisibility?: Record<string, boolean>;
-  onColumnVisibilityChange?: (visibility: Record<string, boolean>) => void;
   onExportCsv?: () => void;
+  onUploadClick?: () => void;
 };
 
 export function Filters({
   search: initialSearch = "",
-  reviewStatus: initialReviewStatus = "",
-  ocrStatus: initialOcrStatus = "",
   visitType: initialVisitType = "",
   attendanceDuration: initialAttendanceDuration = "",
   serviceAttended: initialServiceAttended = "",
   visitTypeOptions = [],
   attendanceDurationOptions = [],
   serviceAttendedOptions = [],
-  columnVisibility = {},
-  onColumnVisibilityChange,
   onExportCsv,
+  onUploadClick,
 }: FiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const search = searchParams.get("search") ?? initialSearch;
-  const reviewStatus = searchParams.get("reviewStatus") ?? initialReviewStatus;
-  const ocrStatus = searchParams.get("ocrStatus") ?? initialOcrStatus;
   const visitType = searchParams.get("visitType") ?? initialVisitType;
   const attendanceDuration =
     searchParams.get("attendanceDuration") ?? initialAttendanceDuration;
@@ -113,89 +69,32 @@ export function Filters({
     updateParams({ search: v || undefined });
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-  };
-
-  const isColumnVisible = (id: string) => columnVisibility[id] !== false;
-
-  const toggleColumn = (id: string, visible: boolean) => {
-    onColumnVisibilityChange?.({
-      ...columnVisibility,
-      [id]: visible,
-    });
-  };
-
   return (
-    <div className="glass-card rounded-2xl p-4 sm:p-5">
-      <div className="flex flex-col gap-4">
-        <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative w-full sm:max-w-sm">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search name, email, phone..."
-              value={search}
-              onChange={handleSearchChange}
-              className="pl-9 rounded-xl"
-            />
-          </div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-            <SlidersHorizontal className="size-3.5 shrink-0 text-muted-foreground" />
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-                Review:
-              </span>
-              {REVIEW_OPTIONS.map((opt) => (
-                <Badge
-                  key={opt.value || "all"}
-                  variant={reviewStatus === opt.value ? "default" : "outline"}
-                  className={cn(
-                    "cursor-pointer shrink-0 transition-all min-h-[28px] px-2.5 text-xs",
-                    reviewStatus === opt.value && "bg-primary text-primary-foreground shadow-sm"
-                  )}
-                  onClick={() => updateParams({ reviewStatus: opt.value || undefined })}
-                >
-                  {opt.label}
-                </Badge>
-              ))}
-            </div>
-            <div className="mx-1 h-4 w-px bg-border/50 shrink-0 hidden sm:block" />
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-                OCR:
-              </span>
-              {OCR_OPTIONS.map((opt) => (
-                <Badge
-                  key={opt.value || "all"}
-                  variant={ocrStatus === opt.value ? "default" : "outline"}
-                  className={cn(
-                    "cursor-pointer shrink-0 transition-all min-h-[28px] px-2.5 text-xs",
-                    ocrStatus === opt.value && "bg-primary text-primary-foreground shadow-sm"
-                  )}
-                  onClick={() => updateParams({ ocrStatus: opt.value || undefined })}
-                >
-                  {opt.label}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </form>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative w-full sm:max-w-xs">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search..."
+            value={search}
+            onChange={handleSearchChange}
+            className="pl-9 rounded-xl"
+          />
+        </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 overflow-x-auto">
           <Select
             value={visitType || "__all__"}
             onValueChange={(v: string | null) =>
-              updateParams({
-                visitType: !v || v === "__all__" ? undefined : v,
-              })
+              updateParams({ visitType: !v || v === "__all__" ? undefined : v })
             }
           >
-            <SelectTrigger className="w-full sm:w-[170px] rounded-xl">
+            <SelectTrigger className="w-[140px] rounded-xl">
               <SelectValue placeholder="Visit Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">All visit types</SelectItem>
+              <SelectItem value="__all__">All visits</SelectItem>
               {visitTypeOptions.map((opt) => (
                 <SelectItem key={opt} value={opt}>
                   {opt}
@@ -203,6 +102,7 @@ export function Filters({
               ))}
             </SelectContent>
           </Select>
+
           <Select
             value={attendanceDuration || "__all__"}
             onValueChange={(v: string | null) =>
@@ -211,7 +111,7 @@ export function Filters({
               })
             }
           >
-            <SelectTrigger className="w-full sm:w-[170px] rounded-xl">
+            <SelectTrigger className="w-[140px] rounded-xl">
               <SelectValue placeholder="Attendance" />
             </SelectTrigger>
             <SelectContent>
@@ -223,6 +123,7 @@ export function Filters({
               ))}
             </SelectContent>
           </Select>
+
           <Select
             value={serviceAttended || "__all__"}
             onValueChange={(v: string | null) =>
@@ -231,7 +132,7 @@ export function Filters({
               })
             }
           >
-            <SelectTrigger className="w-full sm:w-[160px] rounded-xl">
+            <SelectTrigger className="w-[140px] rounded-xl">
               <SelectValue placeholder="Service" />
             </SelectTrigger>
             <SelectContent>
@@ -243,39 +144,27 @@ export function Filters({
               ))}
             </SelectContent>
           </Select>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="outline" size="sm" className="rounded-xl" />
-                }
-              >
-                <Columns3 className="mr-2 size-4" />
-                <span className="hidden sm:inline">Columns</span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {TOGGLEABLE_COLUMNS.map((col) => (
-                  <DropdownMenuCheckboxItem
-                    key={col.id}
-                    checked={isColumnVisible(col.id)}
-                    onCheckedChange={(checked) =>
-                      toggleColumn(col.id, checked !== false)
-                    }
-                  >
-                    {col.label}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {onExportCsv && (
-              <Button variant="outline" size="sm" className="rounded-xl" onClick={onExportCsv}>
-                <Download className="mr-2 size-4" />
-                <span className="hidden sm:inline">Export CSV</span>
-              </Button>
-            )}
-          </div>
         </div>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-2">
+        {onExportCsv && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-xl"
+            onClick={onExportCsv}
+          >
+            <Download className="size-4" />
+            <span className="hidden sm:inline ml-1.5">Export</span>
+          </Button>
+        )}
+        {onUploadClick && (
+          <Button size="sm" className="rounded-xl" onClick={onUploadClick}>
+            <Upload className="size-4" />
+            <span className="hidden sm:inline ml-1.5">Upload</span>
+          </Button>
+        )}
       </div>
     </div>
   );

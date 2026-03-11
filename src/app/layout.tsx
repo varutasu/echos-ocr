@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Quicksand } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
-import { Sidebar } from "@/components/layout/sidebar";
+import { TopBar } from "@/components/layout/top-bar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const quicksand = Quicksand({
+  variable: "--font-sans",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -26,15 +22,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
-      >
+      <body className={`${quicksand.variable} font-sans antialiased`}>
         <Providers>
-          <div className="relative flex min-h-screen">
+          <div className="relative min-h-screen">
             <div className="gradient-mesh pointer-events-none fixed inset-0 z-0" />
-            <Sidebar />
-            <main className="relative z-10 flex-1 pt-16 md:pt-0 md:pl-[260px]">
-              <div className="p-4 sm:p-6 md:p-8">{children}</div>
+            <TopBar />
+            <main className="relative z-10 pt-16">
+              <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+                {children}
+              </div>
             </main>
           </div>
         </Providers>

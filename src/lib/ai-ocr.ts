@@ -1,18 +1,12 @@
 import { generateText, Output } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { google } from "@ai-sdk/google";
-import { anthropic } from "@ai-sdk/anthropic";
+import { gateway } from "@ai-sdk/gateway";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { z } from "zod";
 import { prisma } from "./db";
 import type { LanguageModel } from "ai";
 
-const DEFAULT_MODELS: Record<string, string> = {
-  openai: "gpt-4o-mini",
-  google: "gemini-2.5-flash",
-  anthropic: "claude-sonnet-4-20250514",
-  ollama: "llava:7b",
-};
+const DEFAULT_GATEWAY_MODEL = "openai/gpt-4o-mini";
+const DEFAULT_OLLAMA_MODEL = "llava:7b";
 
 async function getSettings() {
   let settings = await prisma.appSettings.findUnique({
@@ -31,30 +25,15 @@ function getModelInstance(
   modelId: string,
   ollamaUrl: string
 ): LanguageModel {
-  const resolvedModel = modelId || DEFAULT_MODELS[provider] || DEFAULT_MODELS.ollama;
-
-  switch (provider) {
-    case "openai":
-      return openai(resolvedModel);
-
-    case "google":
-      return google(resolvedModel);
-
-    case "anthropic":
-      return anthropic(resolvedModel);
-
-    case "ollama": {
-      const baseURL = (ollamaUrl || process.env.OLLAMA_BASE_URL || "http://192.168.68.108:11434") + "/v1";
-      const ollama = createOpenAICompatible({
-        name: "ollama",
-        baseURL,
-      });
-      return ollama.chatModel(resolvedModel);
-    }
-
-    default:
-      throw new Error(`Unknown AI provider: ${provider}`);
+  if (provider === "ollama") {
+    const resolvedModel = modelId || DEFAULT_OLLAMA_MODEL;
+    const baseURL = (ollamaUrl || process.env.OLLAMA_BASE_URL || "http://192.168.68.108:11434") + "/v1";
+    const ollama = createOpenAICompatible({ name: "ollama", baseURL });
+    return ollama.chatModel(resolvedModel);
   }
+
+  const resolvedModel = modelId || DEFAULT_GATEWAY_MODEL;
+  return gateway(resolvedModel);
 }
 
 const responseCardSchema = z.object({
@@ -153,7 +132,7 @@ export async function ocrImage(
   side: "response" | "survey"
 ): Promise<OcrResult> {
   const settings = await getSettings();
-  const provider = settings.aiProvider || "ollama";
+  const provider = settings.aiProvider || "gateway";
   const modelId = settings.aiModel || "";
   const model = getModelInstance(provider, modelId, settings.ollamaUrl);
 
@@ -171,5 +150,3 @@ export async function ocrImage(
 
   return { data, confidence, raw: JSON.stringify(output), side };
 }
-
-export { DEFAULT_MODELS };

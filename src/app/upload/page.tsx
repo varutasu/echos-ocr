@@ -108,9 +108,9 @@ export default function UploadPage() {
       case "queued":
         return <Loader2 className="size-4 animate-spin text-muted-foreground" />;
       case "processing":
-        return <Loader2 className="size-4 animate-spin text-blue-500" />;
+        return <Loader2 className="size-4 animate-spin text-primary" />;
       case "complete":
-        return <CheckCircle className="size-4 text-green-500" />;
+        return <CheckCircle className="size-4 text-emerald-500" />;
       case "error":
         return <AlertCircle className="size-4 text-red-500" />;
       default:
@@ -123,9 +123,10 @@ export default function UploadPage() {
       <Header
         title="Upload"
         description="Upload scanned response cards for OCR processing"
+        icon={Upload}
       />
 
-      <Card>
+      <Card variant="glass">
         <CardContent className="pt-6">
           <div
             onDragOver={(e) => {
@@ -135,16 +136,16 @@ export default function UploadPage() {
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             className={cn(
-              "flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-12 text-center transition-colors",
+              "flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 sm:p-12 text-center transition-all",
               dragOver
-                ? "border-primary bg-primary/5"
-                : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                ? "border-primary bg-primary/5 scale-[1.01]"
+                : "border-muted-foreground/20 hover:border-primary/40 hover:bg-primary/[2%]"
             )}
           >
-            <div className="mb-4 rounded-full bg-muted p-4">
-              <Upload className="size-8 text-muted-foreground" />
+            <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-primary/10">
+              <Upload className="size-7 text-primary" />
             </div>
-            <h3 className="mb-1 text-lg font-medium">
+            <h3 className="mb-1 text-base font-semibold sm:text-lg">
               Drop files here or click to browse
             </h3>
             <p className="mb-4 text-sm text-muted-foreground">
@@ -152,6 +153,7 @@ export default function UploadPage() {
             </p>
             <Button
               variant="outline"
+              className="rounded-xl"
               onClick={() => fileInputRef.current?.click()}
             >
               <FolderOpen className="mr-2 size-4" />
@@ -169,7 +171,7 @@ export default function UploadPage() {
 
           {files.length > 0 && (
             <div className="mt-6 space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h4 className="text-sm font-medium">
                   {files.length} file{files.length !== 1 ? "s" : ""} selected
                 </h4>
@@ -183,6 +185,7 @@ export default function UploadPage() {
                   </Button>
                   <Button
                     size="sm"
+                    className="rounded-xl"
                     onClick={handleUpload}
                     disabled={uploading}
                   >
@@ -204,15 +207,15 @@ export default function UploadPage() {
                 {files.map((file, i) => (
                   <div
                     key={`${file.name}-${i}`}
-                    className="flex items-center gap-3 rounded-lg border px-3 py-2"
+                    className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5"
                   >
                     {file.type === "application/pdf" ? (
-                      <FileText className="size-4 text-red-500" />
+                      <FileText className="size-4 shrink-0 text-red-500" />
                     ) : (
-                      <ImageIcon className="size-4 text-blue-500" />
+                      <ImageIcon className="size-4 shrink-0 text-blue-500" />
                     )}
-                    <span className="flex-1 truncate text-sm">{file.name}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="flex-1 min-w-0 truncate text-sm">{file.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
                       {(file.size / 1024).toFixed(0)} KB
                     </span>
                     <Button
@@ -230,10 +233,12 @@ export default function UploadPage() {
         </CardContent>
       </Card>
 
-      {/* Processing Queue */}
-      <Card>
+      <Card variant="glass">
         <CardHeader>
-          <CardTitle className="text-base">Processing Queue</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Loader2 className="size-4 text-primary" />
+            Processing Queue
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {jobs.length === 0 ? (
@@ -245,29 +250,29 @@ export default function UploadPage() {
               {jobs.map((job) => (
                 <div
                   key={job.id}
-                  className="flex items-center gap-3 rounded-lg border px-4 py-3"
+                  className="flex flex-col gap-2 rounded-xl border border-border/50 bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:gap-3"
                 >
-                  {getStatusIcon(job.status)}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-medium">
-                        {job.fileName}
-                      </span>
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          "capitalize text-xs",
-                          job.status === "complete" && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-                          job.status === "error" && "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-                          job.status === "processing" && "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-                        )}
-                      >
-                        {job.status}
-                      </Badge>
-                    </div>
-                    {job.totalPages > 0 && (
-                      <div className="mt-1">
-                        <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {getStatusIcon(job.status)}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="truncate text-sm font-medium">
+                          {job.fileName}
+                        </span>
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            "capitalize text-xs",
+                            job.status === "complete" && "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+                            job.status === "error" && "bg-red-500/10 text-red-700 dark:text-red-300",
+                            job.status === "processing" && "bg-primary/10 text-primary",
+                          )}
+                        >
+                          {job.status}
+                        </Badge>
+                      </div>
+                      {job.totalPages > 0 && (
+                        <div className="mt-1.5 flex items-center gap-2">
                           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                             <div
                               className="h-full rounded-full bg-primary transition-all"
@@ -276,17 +281,17 @@ export default function UploadPage() {
                               }}
                             />
                           </div>
-                          <span className="text-xs text-muted-foreground">
-                            {job.processed}/{job.totalPages} pages
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {job.processed}/{job.totalPages}
                           </span>
                         </div>
-                      </div>
-                    )}
-                    {job.error && (
-                      <p className="mt-1 text-xs text-red-500">{job.error}</p>
-                    )}
+                      )}
+                      {job.error && (
+                        <p className="mt-1 text-xs text-red-500">{job.error}</p>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="shrink-0 text-xs text-muted-foreground">
                     {new Date(job.createdAt).toLocaleTimeString()}
                   </span>
                 </div>

@@ -4,7 +4,19 @@ import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Check, Download, ImageIcon, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Download,
+  ImageIcon,
+  ChevronDown,
+  ChevronUp,
+  ScanLine,
+  User,
+  ClipboardList,
+  Code,
+} from "lucide-react";
 
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
@@ -140,10 +152,10 @@ export default function CardDetailPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Skeleton className="h-96" />
-          <Skeleton className="h-96" />
+        <Skeleton className="h-10 w-64 rounded-xl" />
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
+          <Skeleton className="h-96 rounded-2xl" />
+          <Skeleton className="h-96 rounded-2xl" />
         </div>
       </div>
     );
@@ -152,8 +164,8 @@ export default function CardDetailPage() {
   if (!card) {
     return (
       <div className="space-y-6">
-        <Header title="Card Not Found" />
-        <Button variant="outline" onClick={() => router.push("/")}>
+        <Header title="Card Not Found" icon={ScanLine} />
+        <Button variant="outline" className="rounded-xl" onClick={() => router.push("/")}>
           <ArrowLeft className="mr-2 size-4" /> Back to Dashboard
         </Button>
       </div>
@@ -167,32 +179,33 @@ export default function CardDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <Button variant="ghost" size="sm" className="w-fit rounded-xl" onClick={() => router.push("/")}>
           <ArrowLeft className="mr-1 size-4" /> Back
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className={cn(
             "capitalize",
-            ocrStatus === "complete" && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-            ocrStatus === "error" && "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-            ocrStatus === "processing" && "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+            ocrStatus === "complete" && "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+            ocrStatus === "error" && "bg-red-500/10 text-red-700 dark:text-red-300",
+            ocrStatus === "processing" && "bg-primary/10 text-primary",
           )}>
             OCR: {ocrStatus}
           </Badge>
           <Badge variant="secondary" className={cn(
             "capitalize",
-            reviewStatus === "reviewed" && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-            reviewStatus === "exported" && "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-            reviewStatus === "unreviewed" && "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+            reviewStatus === "reviewed" && "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+            reviewStatus === "exported" && "bg-primary/10 text-primary",
+            reviewStatus === "unreviewed" && "bg-amber-500/10 text-amber-700 dark:text-amber-300",
           )}>
             {reviewStatus}
           </Badge>
           {confidence != null && (
             <Badge variant="outline" className={cn(
-              confidence < 50 && "text-red-600 border-red-200",
-              confidence >= 50 && confidence <= 75 && "text-amber-600 border-amber-200",
-              confidence > 75 && "text-green-600 border-green-200",
+              "font-medium",
+              confidence < 50 && "text-red-600 border-red-300 dark:border-red-800",
+              confidence >= 50 && confidence <= 75 && "text-amber-600 border-amber-300 dark:border-amber-800",
+              confidence > 75 && "text-emerald-600 border-emerald-300 dark:border-emerald-800",
             )}>
               {Math.round(confidence)}% confidence
             </Badge>
@@ -200,47 +213,51 @@ export default function CardDetailPage() {
         </div>
       </div>
 
-      <Header title={String(card.name || "Unnamed Card")}>
-        <div className="flex gap-2">
+      <Header title={String(card.name || "Unnamed Card")} icon={ScanLine}>
+        <div className="flex flex-wrap gap-2">
           {reviewStatus !== "reviewed" && (
-            <Button variant="outline" size="sm" onClick={handleMarkReviewed}>
+            <Button variant="outline" size="sm" className="rounded-xl" onClick={handleMarkReviewed}>
               <Check className="mr-1 size-4" /> Mark Reviewed
             </Button>
           )}
           {reviewStatus !== "exported" && (
-            <Button variant="outline" size="sm" onClick={handleExport}>
+            <Button variant="outline" size="sm" className="rounded-xl" onClick={handleExport}>
               <Download className="mr-1 size-4" /> Export
             </Button>
           )}
           {hasEdits && (
-            <Button size="sm" onClick={handleSave} disabled={saving}>
+            <Button size="sm" className="rounded-xl" onClick={handleSave} disabled={saving}>
               {saving ? "Saving..." : "Save Changes"}
             </Button>
           )}
         </div>
       </Header>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        {/* Scanned Images */}
-        <Card>
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 xl:grid-cols-2">
+        <Card variant="glass">
           <CardHeader>
-            <CardTitle className="text-base">Scanned Images</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ImageIcon className="size-4 text-primary" />
+              Scanned Images
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <ImagePanel label="Response Card (Back)" url={card.backImageUrl as string | null} />
               <ImagePanel label="Survey (Front)" url={card.frontImageUrl as string | null} />
             </div>
           </CardContent>
         </Card>
 
-        {/* Personal Info */}
-        <Card>
+        <Card variant="glass">
           <CardHeader>
-            <CardTitle className="text-base">Personal Information</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <User className="size-4 text-primary" />
+              Personal Information
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <Field label="Name" value={getValue("name")} onChange={(v) => setField("name", v)} />
               <Field label="Email" value={getValue("email")} onChange={(v) => setField("email", v)} />
               <Field label="Cell Phone" value={getValue("cellPhone")} onChange={(v) => setField("cellPhone", v)} />
@@ -250,15 +267,15 @@ export default function CardDetailPage() {
               <SelectField label="Marital Status" value={getValue("maritalStatus")} options={["Married", "Single", "Other"]} onChange={(v) => setField("maritalStatus", v)} />
               <SelectField label="Visit Type" value={getValue("visitType")} options={["First/Second Time Guest", "Update My Information"]} onChange={(v) => setField("visitType", v)} />
             </div>
-            <Separator />
-            <div className="grid gap-4 sm:grid-cols-2">
+            <Separator className="opacity-50" />
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <Field label="Address" value={getValue("address")} onChange={(v) => setField("address", v)} />
               <Field label="Apt #" value={getValue("aptNumber")} onChange={(v) => setField("aptNumber", v)} />
               <Field label="City" value={getValue("city")} onChange={(v) => setField("city", v)} />
               <Field label="State" value={getValue("state")} onChange={(v) => setField("state", v)} />
               <Field label="Zip" value={getValue("zip")} onChange={(v) => setField("zip", v)} />
             </div>
-            <Separator />
+            <Separator className="opacity-50" />
             <div>
               <Label className="mb-1.5 block text-xs font-medium text-muted-foreground">Prayer Requests</Label>
               <Textarea
@@ -270,13 +287,15 @@ export default function CardDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Survey Info */}
-        <Card className="xl:col-span-2">
+        <Card variant="glass" className="xl:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">Survey Responses</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ClipboardList className="size-4 text-primary" />
+              Survey Responses
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               <div>
                 <Label className="mb-2 block text-xs font-medium text-muted-foreground">Message Topics</Label>
                 <div className="flex flex-wrap gap-1.5">
@@ -323,21 +342,23 @@ export default function CardDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Raw OCR Response */}
         {card.rawOcrResponse && (
-          <Card className="xl:col-span-2">
+          <Card variant="glass" className="xl:col-span-2">
             <CardHeader>
               <button
                 className="flex w-full items-center justify-between text-left"
                 onClick={() => setShowRawOcr(!showRawOcr)}
               >
-                <CardTitle className="text-base">Raw OCR Response</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Code className="size-4 text-primary" />
+                  Raw OCR Response
+                </CardTitle>
                 {showRawOcr ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
               </button>
             </CardHeader>
             {showRawOcr && (
               <CardContent>
-                <pre className="max-h-96 overflow-auto rounded-lg bg-muted p-4 text-xs">
+                <pre className="max-h-96 overflow-auto rounded-xl bg-muted/50 p-4 text-xs">
                   {JSON.stringify(card.rawOcrResponse, null, 2)}
                 </pre>
               </CardContent>
@@ -346,16 +367,15 @@ export default function CardDetailPage() {
         )}
       </div>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between border-t pt-4">
-        <Button variant="outline" size="sm" onClick={() => router.push("/")}>
+      <div className="flex flex-col gap-3 border-t border-border/50 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <Button variant="outline" size="sm" className="w-fit rounded-xl" onClick={() => router.push("/")}>
           <ArrowLeft className="mr-1 size-4" /> All Cards
         </Button>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled>
+          <Button variant="outline" size="sm" className="rounded-xl" disabled>
             <ArrowLeft className="mr-1 size-4" /> Previous
           </Button>
-          <Button variant="outline" size="sm" disabled>
+          <Button variant="outline" size="sm" className="rounded-xl" disabled>
             Next <ArrowRight className="ml-1 size-4" />
           </Button>
         </div>
@@ -369,12 +389,12 @@ function ImagePanel({ label, url }: { label: string; url: string | null }) {
     <div>
       <Label className="mb-1.5 block text-xs font-medium text-muted-foreground">{label}</Label>
       {url ? (
-        <div className="relative aspect-[3/4] overflow-hidden rounded-lg border bg-muted">
+        <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-border/50 bg-muted/30">
           <Image src={url} alt={label} fill className="object-contain" unoptimized />
         </div>
       ) : (
-        <div className="flex aspect-[3/4] items-center justify-center rounded-lg border bg-muted/50">
-          <ImageIcon className="size-12 text-muted-foreground/30" />
+        <div className="flex aspect-[3/4] items-center justify-center rounded-xl border border-border/50 bg-muted/20">
+          <ImageIcon className="size-12 text-muted-foreground/20" />
         </div>
       )}
     </div>

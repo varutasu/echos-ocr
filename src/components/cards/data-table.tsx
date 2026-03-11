@@ -29,7 +29,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 import type { ResponseCard } from "./columns";
 
 type DataTableProps<TData> = {
@@ -135,15 +134,16 @@ export function DataTable<TData extends ResponseCard>({
   return (
     <div className="space-y-4">
       {selectedCount > 0 && (
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-2.5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 glass-card rounded-2xl px-4 py-3">
           <span className="text-sm font-medium">
             {selectedCount} row{selectedCount !== 1 ? "s" : ""} selected
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {onBulkMarkReviewed && (
               <Button
                 variant="outline"
                 size="sm"
+                className="rounded-xl"
                 onClick={() => onBulkMarkReviewed(selectedIds)}
               >
                 <CheckCircle className="mr-1.5 size-4" />
@@ -154,6 +154,7 @@ export function DataTable<TData extends ResponseCard>({
               <Button
                 variant="outline"
                 size="sm"
+                className="rounded-xl"
                 onClick={() => onBulkMarkExported(selectedIds)}
               >
                 <Download className="mr-1.5 size-4" />
@@ -164,7 +165,7 @@ export function DataTable<TData extends ResponseCard>({
               <Button
                 variant="outline"
                 size="sm"
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => onBulkDelete(selectedIds)}
               >
                 <Trash2 className="mr-1.5 size-4" />
@@ -174,77 +175,80 @@ export function DataTable<TData extends ResponseCard>({
             <Button
               variant="ghost"
               size="sm"
+              className="rounded-xl"
               onClick={() => table.toggleAllPageRowsSelected(false)}
             >
-              Clear selection
+              Clear
             </Button>
           </div>
         </div>
       )}
 
-      <div className="rounded-lg border border-border bg-card">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="px-4 py-3">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="transition-colors"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4 py-3">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
+      <div className="glass-card overflow-hidden rounded-2xl">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="transition-colors hover:bg-muted/30"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="px-4 py-3">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <span>
             {totalCount === 0
               ? "0 results"
               : `${start}–${end} of ${totalCount}`}
           </span>
           <div className="flex items-center gap-2">
-            <span>Rows per page</span>
+            <span className="text-xs">Rows</span>
             <select
               value={limit}
               onChange={(e) => onLimitChange?.(Number(e.target.value))}
-              className="h-8 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="h-8 rounded-xl border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               {PAGE_SIZES.map((size) => (
                 <option key={size} value={size}>
@@ -254,15 +258,16 @@ export function DataTable<TData extends ResponseCard>({
             </select>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <Button
             variant="outline"
             size="sm"
+            className="rounded-xl"
             onClick={() => onPageChange?.(page - 1)}
             disabled={!canPrev}
           >
             <ChevronLeft className="size-4" />
-            Previous
+            <span className="hidden sm:inline ml-1">Prev</span>
           </Button>
           <div className="flex items-center gap-1">
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -281,7 +286,7 @@ export function DataTable<TData extends ResponseCard>({
                   key={p}
                   variant={p === page ? "default" : "ghost"}
                   size="sm"
-                  className="size-8 p-0"
+                  className="size-8 rounded-xl p-0"
                   onClick={() => onPageChange?.(p)}
                 >
                   {p}
@@ -292,10 +297,11 @@ export function DataTable<TData extends ResponseCard>({
           <Button
             variant="outline"
             size="sm"
+            className="rounded-xl"
             onClick={() => onPageChange?.(page + 1)}
             disabled={!canNext}
           >
-            Next
+            <span className="hidden sm:inline mr-1">Next</span>
             <ChevronRight className="size-4" />
           </Button>
         </div>

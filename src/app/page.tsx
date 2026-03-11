@@ -1,25 +1,32 @@
 import { Suspense } from "react";
-import { Header } from "@/components/layout/header";
 import { DashboardContent } from "@/components/cards/dashboard-content";
+import { DashboardHero } from "@/components/cards/dashboard-hero";
+import { StatCards } from "@/components/cards/stat-cards";
+import { QuickActions } from "@/components/cards/quick-actions";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-6">
-      <Header
-        title="Response Cards"
-        description="Manage scanned response cards from Echo Life Church"
-      />
-      <Suspense
-        fallback={
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-[400px] w-full" />
-          </div>
-        }
-      >
-        <DashboardContent />
-      </Suspense>
+    <div className="space-y-6 sm:space-y-8">
+      <DashboardHero />
+      <StatCards />
+      <QuickActions />
+
+      <div>
+        <h2 className="mb-4 text-lg font-semibold tracking-tight">
+          All Response Cards
+        </h2>
+        <Suspense
+          fallback={
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full rounded-xl" />
+              <Skeleton className="h-[400px] w-full rounded-xl" />
+            </div>
+          }
+        >
+          <DashboardContent />
+        </Suspense>
+      </div>
     </div>
   );
 }

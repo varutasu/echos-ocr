@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Search, Download, Columns3 } from "lucide-react";
+import { Search, Download, Columns3, SlidersHorizontal } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -127,150 +127,154 @@ export function Filters({
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <form onSubmit={handleSearchSubmit} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search name, email, phone, city..."
-            value={search}
-            onChange={handleSearchChange}
-            className="pl-9"
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground">
-              Review:
-            </span>
-            {REVIEW_OPTIONS.map((opt) => (
-              <Badge
-                key={opt.value || "all"}
-                variant={reviewStatus === opt.value ? "default" : "outline"}
-                className={cn(
-                  "cursor-pointer transition-colors",
-                  reviewStatus === opt.value && "bg-primary text-primary-foreground"
-                )}
-                onClick={() => updateParams({ reviewStatus: opt.value || undefined })}
-              >
-                {opt.label}
-              </Badge>
-            ))}
+    <div className="glass-card rounded-2xl p-4 sm:p-5">
+      <div className="flex flex-col gap-4">
+        <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search name, email, phone..."
+              value={search}
+              onChange={handleSearchChange}
+              className="pl-9 rounded-xl"
+            />
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground">
-              OCR:
-            </span>
-            {OCR_OPTIONS.map((opt) => (
-              <Badge
-                key={opt.value || "all"}
-                variant={ocrStatus === opt.value ? "default" : "outline"}
-                className={cn(
-                  "cursor-pointer transition-colors",
-                  ocrStatus === opt.value && "bg-primary text-primary-foreground"
-                )}
-                onClick={() => updateParams({ ocrStatus: opt.value || undefined })}
-              >
-                {opt.label}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      </form>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Select
-          value={visitType || "__all__"}
-          onValueChange={(v: string | null) =>
-            updateParams({
-              visitType: !v || v === "__all__" ? undefined : v,
-            })
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Visit Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All visit types</SelectItem>
-            {visitTypeOptions.map((opt) => (
-              <SelectItem key={opt} value={opt}>
-                {opt}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={attendanceDuration || "__all__"}
-          onValueChange={(v: string | null) =>
-            updateParams({
-              attendanceDuration: !v || v === "__all__" ? undefined : v,
-            })
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Attendance" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All attendance</SelectItem>
-            {attendanceDurationOptions.map((opt) => (
-              <SelectItem key={opt} value={opt}>
-                {opt}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={serviceAttended || "__all__"}
-          onValueChange={(v: string | null) =>
-            updateParams({
-              serviceAttended: !v || v === "__all__" ? undefined : v,
-            })
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Service" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All services</SelectItem>
-            {serviceAttendedOptions.map((opt) => (
-              <SelectItem key={opt} value={opt}>
-                {opt}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <div className="ml-auto flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button variant="outline" size="sm" />
-              }
-            >
-              <Columns3 className="mr-2 size-4" />
-              Columns
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {TOGGLEABLE_COLUMNS.map((col) => (
-                <DropdownMenuCheckboxItem
-                  key={col.id}
-                  checked={isColumnVisible(col.id)}
-                  onCheckedChange={(checked) =>
-                    toggleColumn(col.id, checked !== false)
-                  }
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+            <SlidersHorizontal className="size-3.5 shrink-0 text-muted-foreground" />
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                Review:
+              </span>
+              {REVIEW_OPTIONS.map((opt) => (
+                <Badge
+                  key={opt.value || "all"}
+                  variant={reviewStatus === opt.value ? "default" : "outline"}
+                  className={cn(
+                    "cursor-pointer shrink-0 transition-all min-h-[28px] px-2.5 text-xs",
+                    reviewStatus === opt.value && "bg-primary text-primary-foreground shadow-sm"
+                  )}
+                  onClick={() => updateParams({ reviewStatus: opt.value || undefined })}
                 >
-                  {col.label}
-                </DropdownMenuCheckboxItem>
+                  {opt.label}
+                </Badge>
               ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {onExportCsv && (
-            <Button variant="outline" size="sm" onClick={onExportCsv}>
-              <Download className="mr-2 size-4" />
-              Export CSV
-            </Button>
-          )}
+            </div>
+            <div className="mx-1 h-4 w-px bg-border/50 shrink-0 hidden sm:block" />
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                OCR:
+              </span>
+              {OCR_OPTIONS.map((opt) => (
+                <Badge
+                  key={opt.value || "all"}
+                  variant={ocrStatus === opt.value ? "default" : "outline"}
+                  className={cn(
+                    "cursor-pointer shrink-0 transition-all min-h-[28px] px-2.5 text-xs",
+                    ocrStatus === opt.value && "bg-primary text-primary-foreground shadow-sm"
+                  )}
+                  onClick={() => updateParams({ ocrStatus: opt.value || undefined })}
+                >
+                  {opt.label}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </form>
+
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <Select
+            value={visitType || "__all__"}
+            onValueChange={(v: string | null) =>
+              updateParams({
+                visitType: !v || v === "__all__" ? undefined : v,
+              })
+            }
+          >
+            <SelectTrigger className="w-full sm:w-[170px] rounded-xl">
+              <SelectValue placeholder="Visit Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All visit types</SelectItem>
+              {visitTypeOptions.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={attendanceDuration || "__all__"}
+            onValueChange={(v: string | null) =>
+              updateParams({
+                attendanceDuration: !v || v === "__all__" ? undefined : v,
+              })
+            }
+          >
+            <SelectTrigger className="w-full sm:w-[170px] rounded-xl">
+              <SelectValue placeholder="Attendance" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All attendance</SelectItem>
+              {attendanceDurationOptions.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={serviceAttended || "__all__"}
+            onValueChange={(v: string | null) =>
+              updateParams({
+                serviceAttended: !v || v === "__all__" ? undefined : v,
+              })
+            }
+          >
+            <SelectTrigger className="w-full sm:w-[160px] rounded-xl">
+              <SelectValue placeholder="Service" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All services</SelectItem>
+              {serviceAttendedOptions.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button variant="outline" size="sm" className="rounded-xl" />
+                }
+              >
+                <Columns3 className="mr-2 size-4" />
+                <span className="hidden sm:inline">Columns</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {TOGGLEABLE_COLUMNS.map((col) => (
+                  <DropdownMenuCheckboxItem
+                    key={col.id}
+                    checked={isColumnVisible(col.id)}
+                    onCheckedChange={(checked) =>
+                      toggleColumn(col.id, checked !== false)
+                    }
+                  >
+                    {col.label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {onExportCsv && (
+              <Button variant="outline" size="sm" className="rounded-xl" onClick={onExportCsv}>
+                <Download className="mr-2 size-4" />
+                <span className="hidden sm:inline">Export CSV</span>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

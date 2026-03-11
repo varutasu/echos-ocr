@@ -2,7 +2,18 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Wifi, WifiOff, Trash2, Brain } from "lucide-react";
+import {
+  Loader2,
+  Save,
+  Wifi,
+  WifiOff,
+  Trash2,
+  Brain,
+  FolderSearch,
+  HardDrive,
+  Plug,
+  Settings,
+} from "lucide-react";
 
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
@@ -19,13 +30,21 @@ import {
 } from "@/components/ui/select";
 
 const AI_PROVIDERS = [
-  { value: "openai", label: "OpenAI", defaultModel: "gpt-4o-mini", hint: "GPT-4o, GPT-4o-mini" },
-  { value: "google", label: "Google Gemini", defaultModel: "gemini-2.5-flash", hint: "Gemini 2.5 Flash, Gemini 2.5 Pro" },
-  { value: "anthropic", label: "Anthropic", defaultModel: "claude-sonnet-4-20250514", hint: "Claude Sonnet, Claude Haiku" },
-  { value: "ollama", label: "Ollama (Local)", defaultModel: "llava:7b", hint: "llava:7b, moondream, llama3.2-vision" },
+  {
+    value: "gateway",
+    label: "Vercel AI Gateway",
+    defaultModel: "openai/gpt-4o-mini",
+    hint: "openai/gpt-4o-mini, google/gemini-2.5-flash, anthropic/claude-sonnet-4-20250514",
+  },
+  {
+    value: "ollama",
+    label: "Ollama (Local)",
+    defaultModel: "llava:7b",
+    hint: "llava:7b, moondream, llama3.2-vision",
+  },
 ] as const;
 
-type Settings = {
+type SettingsData = {
   ollamaUrl: string;
   model: string;
   watchDir: string;
@@ -37,14 +56,14 @@ type Settings = {
 };
 
 export default function SettingsPage() {
-  const [settings, setSettings] = React.useState<Settings>({
+  const [settings, setSettings] = React.useState<SettingsData>({
     ollamaUrl: "",
     model: "",
     watchDir: "",
     watching: false,
     sourceRetentionDays: 30,
     imageRetentionDays: 180,
-    aiProvider: "ollama",
+    aiProvider: "gateway",
     aiModel: "",
   });
   const [loading, setLoading] = React.useState(true);
@@ -177,21 +196,20 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <Header title="Settings" description="Configure OCR and app settings">
-        <Button onClick={handleSave} disabled={saving}>
+      <Header title="Settings" description="Configure OCR and app settings" icon={Settings}>
+        <Button className="rounded-xl" onClick={handleSave} disabled={saving}>
           {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
           Save Settings
         </Button>
       </Header>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* AI Provider */}
-        <Card>
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
+        <Card variant="glass">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Brain className="size-4" />
+                  <Brain className="size-4 text-primary" />
                   AI Provider
                 </CardTitle>
                 <CardDescription>Choose the AI model for OCR processing</CardDescription>
@@ -200,9 +218,9 @@ export default function SettingsPage() {
                 variant="secondary"
                 className={
                   aiTestStatus === "success"
-                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
                     : aiTestStatus === "error"
-                    ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                    ? "bg-red-500/10 text-red-700 dark:text-red-300"
                     : ""
                 }
               >
@@ -258,22 +276,16 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {settings.aiProvider !== "ollama" && (
-              <div className="rounded-lg border bg-muted/50 p-3">
+            {settings.aiProvider === "gateway" && (
+              <div className="rounded-xl border border-border/50 bg-muted/30 p-3">
                 <p className="text-xs text-muted-foreground">
-                  API key is read from the environment variable:{" "}
-                  <code className="rounded bg-muted px-1 py-0.5">
-                    {settings.aiProvider === "openai"
-                      ? "OPENAI_API_KEY"
-                      : settings.aiProvider === "google"
-                      ? "GOOGLE_GENERATIVE_AI_API_KEY"
-                      : "ANTHROPIC_API_KEY"}
-                  </code>
+                  Uses the <code className="rounded-md bg-muted px-1.5 py-0.5 text-foreground/80">AI_GATEWAY_API_KEY</code> env
+                  var. Model format: <code className="rounded-md bg-muted px-1.5 py-0.5 text-foreground/80">provider/model</code>
                 </p>
               </div>
             )}
 
-            <Button variant="outline" size="sm" onClick={testAiProvider} disabled={aiTestStatus === "testing"}>
+            <Button variant="outline" size="sm" className="rounded-xl" onClick={testAiProvider} disabled={aiTestStatus === "testing"}>
               {aiTestStatus === "testing" ? (
                 <Loader2 className="mr-2 size-3 animate-spin" />
               ) : (
@@ -284,10 +296,12 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Folder Watch */}
-        <Card>
+        <Card variant="glass">
           <CardHeader>
-            <CardTitle className="text-base">Folder Monitoring</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FolderSearch className="size-4 text-primary" />
+              Folder Monitoring
+            </CardTitle>
             <CardDescription>Automatically process new PDFs dropped into a folder</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -302,17 +316,18 @@ export default function SettingsPage() {
                 Absolute path on the server. Mount a host folder into the container.
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Button
                 variant={settings.watching ? "destructive" : "outline"}
                 size="sm"
+                className="rounded-xl"
                 onClick={toggleWatch}
                 disabled={!settings.watchDir}
               >
                 {settings.watching ? "Stop Watching" : "Start Watching"}
               </Button>
               {settings.watching && (
-                <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                   Active
                 </Badge>
               )}
@@ -320,10 +335,12 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Storage & Cleanup */}
-        <Card>
+        <Card variant="glass">
           <CardHeader>
-            <CardTitle className="text-base">Storage & Cleanup</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <HardDrive className="size-4 text-primary" />
+              Storage & Cleanup
+            </CardTitle>
             <CardDescription>Auto-purge uploaded files and images to save storage</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -365,8 +382,8 @@ export default function SettingsPage() {
                 Scanned card images are removed after this many days. Card data is kept.
               </p>
             </div>
-            <div className="rounded-lg border bg-muted/50 p-3">
-              <div className="flex items-center justify-between">
+            <div className="rounded-xl border border-border/50 bg-muted/30 p-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm">
                   {cleanupStatus ? (
                     <>
@@ -381,6 +398,7 @@ export default function SettingsPage() {
                 <Button
                   variant="destructive"
                   size="sm"
+                  className="shrink-0 rounded-xl"
                   onClick={runCleanup}
                   disabled={cleaning || !cleanupStatus || (cleanupStatus.sourcesEligible === 0 && cleanupStatus.imagesEligible === 0)}
                 >
@@ -392,19 +410,21 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Monday.com Integration (placeholder) */}
-        <Card>
+        <Card variant="glass">
           <CardHeader>
-            <CardTitle className="text-base">Monday.com Integration</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Plug className="size-4 text-primary" />
+              Monday.com Integration
+            </CardTitle>
             <CardDescription>Push scanned card data to Monday.com boards (coming soon)</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-lg border-2 border-dashed border-muted-foreground/20 p-8 text-center">
+            <div className="rounded-2xl border-2 border-dashed border-muted-foreground/15 p-6 sm:p-8 text-center">
               <p className="text-sm text-muted-foreground">
                 API endpoints are ready. Configure Monday.com connection in a future update.
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Use the REST API at <code className="rounded bg-muted px-1 py-0.5">/api/cards</code> to
+                Use the REST API at <code className="rounded-md bg-muted px-1.5 py-0.5 text-foreground/80">/api/cards</code> to
                 integrate with n8n, Zapier, or Monday.com directly.
               </p>
             </div>

@@ -30,10 +30,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
         <Providers>
-          <div className="flex min-h-screen">
+          <div className="relative flex min-h-screen">
+            <div className="gradient-mesh pointer-events-none fixed inset-0 z-0" />
             <Sidebar />
-            <main className="flex-1 pt-14 md:pt-0 md:pl-[240px]">
-              <div className="p-6 md:p-8">{children}</div>
+            <main className="relative z-10 flex-1 pt-16 md:pt-0 md:pl-[260px]">
+              <div className="p-4 sm:p-6 md:p-8">{children}</div>
             </main>
           </div>
         </Providers>

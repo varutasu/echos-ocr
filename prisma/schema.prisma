@@ -83,6 +83,6 @@ model AppSettings {
   sourceRetentionDays Int @default(30)
   imageRetentionDays  Int @default(180)
 
-  aiProvider String @default("ollama")
+  aiProvider String @default("gateway")
   aiModel    String @default("")
 }

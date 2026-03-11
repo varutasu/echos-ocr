@@ -85,7 +85,7 @@ export function Filters({
 
         <div className="flex items-center gap-2 overflow-x-auto">
           <Select
-            value={visitType || "__all__"}
+            value={visitType || null}
             onValueChange={(v: string | null) =>
               updateParams({ visitType: !v || v === "__all__" ? undefined : v })
             }
@@ -104,7 +104,7 @@ export function Filters({
           </Select>
 
           <Select
-            value={attendanceDuration || "__all__"}
+            value={attendanceDuration || null}
             onValueChange={(v: string | null) =>
               updateParams({
                 attendanceDuration: !v || v === "__all__" ? undefined : v,
@@ -125,7 +125,7 @@ export function Filters({
           </Select>
 
           <Select
-            value={serviceAttended || "__all__"}
+            value={serviceAttended || null}
             onValueChange={(v: string | null) =>
               updateParams({
                 serviceAttended: !v || v === "__all__" ? undefined : v,

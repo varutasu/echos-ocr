@@ -1,6 +1,6 @@
 import { prisma } from "./db";
 import { uploadBuffer } from "./minio";
-import { ocrImage } from "./ollama";
+import { ocrImage } from "./ai-ocr";
 import { pdfToImages, imageToBase64, processUploadedImage } from "./pdf";
 
 export async function processFile(

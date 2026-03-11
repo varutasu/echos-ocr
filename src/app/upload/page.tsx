@@ -11,6 +11,7 @@ import {
   CheckCircle,
   AlertCircle,
   FolderOpen,
+  RefreshCw,
 } from "lucide-react";
 
 import { Header } from "@/components/layout/header";
@@ -34,6 +35,7 @@ export default function UploadPage() {
   const [uploading, setUploading] = React.useState(false);
   const [jobs, setJobs] = React.useState<ProcessingJob[]>([]);
   const [dragOver, setDragOver] = React.useState(false);
+  const [retryingJobId, setRetryingJobId] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const fetchJobs = React.useCallback(async () => {
@@ -115,6 +117,23 @@ export default function UploadPage() {
         return <AlertCircle className="size-4 text-red-500" />;
       default:
         return null;
+    }
+  };
+
+  const handleRetryJob = async (jobId: string) => {
+    setRetryingJobId(jobId);
+    try {
+      const res = await fetch(`/api/jobs/${jobId}/reprocess`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to retry job");
+      }
+      toast.success("Job reprocessing started");
+      fetchJobs();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to retry job");
+    } finally {
+      setRetryingJobId(null);
     }
   };
 
@@ -291,9 +310,26 @@ export default function UploadPage() {
                       )}
                     </div>
                   </div>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {new Date(job.createdAt).toLocaleTimeString()}
-                  </span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {job.status === "error" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 rounded-lg px-2.5 text-xs"
+                        onClick={() => handleRetryJob(job.id)}
+                        disabled={retryingJobId === job.id}
+                      >
+                        {retryingJobId === job.id ? (
+                          <><Loader2 className="mr-1 size-3 animate-spin" /> Retrying...</>
+                        ) : (
+                          <><RefreshCw className="mr-1 size-3" /> Retry</>
+                        )}
+                      </Button>
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(job.createdAt).toLocaleTimeString()}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

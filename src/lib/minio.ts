@@ -39,6 +39,14 @@ export async function getPresignedUrl(key: string, expiresIn = 3600): Promise<st
   );
 }
 
+export async function getBuffer(key: string): Promise<Buffer> {
+  const res = await s3.send(
+    new GetObjectCommand({ Bucket: BUCKET, Key: key })
+  );
+  const stream = res.Body as ReadableStream;
+  return Buffer.from(await new Response(stream).arrayBuffer());
+}
+
 export async function deleteObject(key: string): Promise<void> {
   await s3.send(
     new DeleteObjectCommand({ Bucket: BUCKET, Key: key })

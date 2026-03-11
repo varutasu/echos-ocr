@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const { text } = await generateText({
       model,
       prompt: "Reply with exactly: OK",
-      maxOutputTokens: 10,
+      maxOutputTokens: 20,
     });
 
     return NextResponse.json({ ok: true, response: text.trim() });

@@ -16,6 +16,9 @@ import {
   User,
   ClipboardList,
   Code,
+  RefreshCw,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 
 import { Header } from "@/components/layout/header";
@@ -81,6 +84,7 @@ export default function CardDetailPage() {
   const [card, setCard] = React.useState<CardData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const [reprocessing, setReprocessing] = React.useState(false);
   const [edits, setEdits] = React.useState<Record<string, string>>({});
   const [showRawOcr, setShowRawOcr] = React.useState(false);
 
@@ -102,6 +106,24 @@ export default function CardDetailPage() {
   React.useEffect(() => {
     fetchCard();
   }, [fetchCard]);
+
+  React.useEffect(() => {
+    if (card?.ocrStatus !== "processing") return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/cards/${id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setCard(data);
+        if (data.ocrStatus !== "processing") {
+          setReprocessing(false);
+          if (data.ocrStatus === "complete") toast.success("Reprocessing complete");
+          if (data.ocrStatus === "error") toast.error("Reprocessing failed");
+        }
+      } catch { /* ignore polling errors */ }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [card?.ocrStatus, id]);
 
   const getValue = (field: keyof CardData): string => {
     if (field in edits) return edits[field];
@@ -147,6 +169,22 @@ export default function CardDetailPage() {
     await fetch(`/api/cards/${id}/export`, { method: "POST" });
     toast.success("Marked as exported");
     fetchCard();
+  };
+
+  const handleReprocess = async () => {
+    setReprocessing(true);
+    try {
+      const res = await fetch(`/api/cards/${id}/reprocess`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to start reprocessing");
+      }
+      toast.success("Reprocessing started");
+      await fetchCard();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to start reprocessing");
+      setReprocessing(false);
+    }
   };
 
   if (loading) {
@@ -215,6 +253,20 @@ export default function CardDetailPage() {
 
       <Header title={String(card.name || "Unnamed Card")} icon={ScanLine}>
         <div className="flex flex-wrap gap-2">
+          {ocrStatus === "error" && (
+            <Button variant="outline" size="sm" className="rounded-xl" onClick={handleReprocess} disabled={reprocessing}>
+              {reprocessing ? (
+                <><Loader2 className="mr-1 size-4 animate-spin" /> Reprocessing...</>
+              ) : (
+                <><RefreshCw className="mr-1 size-4" /> Reprocess</>
+              )}
+            </Button>
+          )}
+          {ocrStatus === "processing" && (
+            <Badge variant="secondary" className="bg-primary/10 text-primary gap-1.5 py-1.5 px-3">
+              <Loader2 className="size-3.5 animate-spin" /> Processing...
+            </Badge>
+          )}
           {reviewStatus !== "reviewed" && (
             <Button variant="outline" size="sm" className="rounded-xl" onClick={handleMarkReviewed}>
               <Check className="mr-1 size-4" /> Mark Reviewed
@@ -232,6 +284,16 @@ export default function CardDetailPage() {
           )}
         </div>
       </Header>
+
+      {ocrStatus === "error" && card.ocrError && (
+        <div className="flex items-start gap-3 rounded-xl border border-red-300 bg-red-500/10 p-4 dark:border-red-800">
+          <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-600 dark:text-red-400" />
+          <div>
+            <p className="text-sm font-medium text-red-700 dark:text-red-300">OCR Processing Error</p>
+            <p className="mt-0.5 text-sm text-red-600 dark:text-red-400">{card.ocrError}</p>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 sm:gap-6 grid-cols-1 xl:grid-cols-2">
         <Card variant="glass">

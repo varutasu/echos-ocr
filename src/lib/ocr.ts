@@ -1,5 +1,5 @@
 import { prisma } from "./db";
-import { uploadBuffer } from "./minio";
+import { uploadBuffer, getBuffer, deleteObject } from "./minio";
 import { ocrImage } from "./ai-ocr";
 import { pdfToImages, imageToBase64, processUploadedImage } from "./pdf";
 
@@ -160,6 +160,116 @@ export async function processFile(
   }
 
   return cardIds;
+}
+
+export async function reprocessCard(cardId: string): Promise<void> {
+  const card = await prisma.responseCard.findUnique({ where: { id: cardId } });
+  if (!card) throw new Error("Card not found");
+  if (!card.backImagePath && !card.frontImagePath) {
+    throw new Error("No stored images available for reprocessing");
+  }
+
+  await prisma.responseCard.update({
+    where: { id: cardId },
+    data: { ocrStatus: "processing", ocrError: null },
+  });
+
+  try {
+    let responseData: Record<string, unknown> = {};
+    let surveyData: Record<string, unknown> = {};
+    let totalConfidence = 0;
+    let confidenceCount = 0;
+
+    if (card.backImagePath) {
+      const imgBuffer = await getBuffer(card.backImagePath);
+      const base64 = await imageToBase64(imgBuffer);
+      const result = await ocrImage(base64, "response");
+      responseData = result.data;
+      totalConfidence += result.confidence;
+      confidenceCount++;
+    }
+
+    if (card.frontImagePath) {
+      const imgBuffer = await getBuffer(card.frontImagePath);
+      const base64 = await imageToBase64(imgBuffer);
+      const result = await ocrImage(base64, "survey");
+      surveyData = result.data;
+      totalConfidence += result.confidence;
+      confidenceCount++;
+    }
+
+    const avgConfidence = confidenceCount > 0 ? totalConfidence / confidenceCount : 0;
+
+    await prisma.responseCard.update({
+      where: { id: cardId },
+      data: {
+        name: asString(responseData.name),
+        gender: asString(responseData.gender),
+        dateOfBirth: asString(responseData.dateOfBirth),
+        maritalStatus: asString(responseData.maritalStatus),
+        maritalStatusOther: asString(responseData.maritalStatusOther),
+        visitType: asString(responseData.visitType),
+        cellPhone: asString(responseData.cellPhone),
+        homePhone: asString(responseData.homePhone),
+        email: asString(responseData.email),
+        address: asString(responseData.address),
+        aptNumber: asString(responseData.aptNumber),
+        city: asString(responseData.city),
+        state: asString(responseData.state),
+        zip: asString(responseData.zip),
+        prayerRequests: asString(responseData.prayerRequests),
+        prayerForTeam: asBool(responseData.prayerForTeam),
+        prayerConfidential: asBool(responseData.prayerConfidential),
+        messageTopics: surveyData.messageTopics ?? [],
+        messageTopicsOther: asString(surveyData.messageTopicsOther),
+        nextStep: surveyData.nextStep ?? [],
+        attendanceDuration: asString(surveyData.attendanceDuration),
+        campusPreference: surveyData.campusPreference ?? [],
+        campusPreferenceOther: asString(surveyData.campusPreferenceOther),
+        howHeard: surveyData.howHeard ?? [],
+        howHeardOther: asString(surveyData.howHeardOther),
+        serviceAttended: asString(surveyData.serviceAttended),
+        ocrStatus: "complete",
+        ocrConfidence: Math.round(avgConfidence),
+        ocrError: null,
+        rawOcrResponse: JSON.parse(JSON.stringify({ response: responseData, survey: surveyData })),
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown OCR error";
+    await prisma.responseCard.update({
+      where: { id: cardId },
+      data: { ocrStatus: "error", ocrError: message },
+    });
+  }
+}
+
+export async function reprocessJob(jobId: string): Promise<void> {
+  const job = await prisma.processingJob.findUnique({ where: { id: jobId } });
+  if (!job) throw new Error("Job not found");
+
+  const oldCardIds = (job.cardIds as string[] | null) ?? [];
+  for (const cardId of oldCardIds) {
+    const card = await prisma.responseCard.findUnique({ where: { id: cardId } });
+    if (card) {
+      const deletes: Promise<void>[] = [];
+      if (card.frontImagePath) deletes.push(deleteObject(card.frontImagePath));
+      if (card.backImagePath) deletes.push(deleteObject(card.backImagePath));
+      await Promise.allSettled(deletes);
+      await prisma.responseCard.delete({ where: { id: cardId } });
+    }
+  }
+
+  const sourceKey = `sources/${jobId}/${job.fileName}`;
+  const fileBuffer = await getBuffer(sourceKey);
+  const isPdf = job.fileName.toLowerCase().endsWith(".pdf");
+
+  await prisma.processingJob.update({
+    where: { id: jobId },
+    data: { status: "queued", processed: 0, error: null, cardIds: null },
+  });
+
+  await processFile(jobId, job.fileName, fileBuffer, isPdf);
 }
 
 function asString(v: unknown): string | null {

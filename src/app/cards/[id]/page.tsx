@@ -253,7 +253,7 @@ export default function CardDetailPage() {
 
       <Header title={String(card.name || "Unnamed Card")} icon={ScanLine}>
         <div className="flex flex-wrap gap-2">
-          {ocrStatus === "error" && (
+          {ocrStatus !== "processing" && (
             <Button variant="outline" size="sm" className="rounded-xl" onClick={handleReprocess} disabled={reprocessing}>
               {reprocessing ? (
                 <><Loader2 className="mr-1 size-4 animate-spin" /> Reprocessing...</>

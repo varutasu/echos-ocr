@@ -312,7 +312,7 @@ export function createColumns(actions?: ColumnActions): ColumnDef<ResponseCard>[
               </DropdownMenuItem>
             )}
             {actions?.onReprocess &&
-              row.original.ocrStatus === "error" && (
+              row.original.ocrStatus !== "processing" && (
                 <DropdownMenuItem
                   onClick={() => actions.onReprocess?.(row.original)}
                 >

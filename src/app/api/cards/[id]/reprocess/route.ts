@@ -14,9 +14,9 @@ export async function POST(
       return NextResponse.json({ error: "Card not found" }, { status: 404 });
     }
 
-    if (card.ocrStatus !== "error") {
+    if (card.ocrStatus === "processing") {
       return NextResponse.json(
-        { error: `Cannot reprocess card with status "${card.ocrStatus}"` },
+        { error: "Card is already being processed" },
         { status: 400 }
       );
     }

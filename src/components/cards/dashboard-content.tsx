@@ -190,6 +190,23 @@ export function DashboardContent() {
           toast.success("Marked as reviewed");
           fetchCards();
         },
+        onReprocess: async (card) => {
+          try {
+            const res = await fetch(`/api/cards/${card.id}/reprocess`, {
+              method: "POST",
+            });
+            if (!res.ok) {
+              const err = await res.json();
+              throw new Error(err.error || "Failed to start reprocessing");
+            }
+            toast.success("Reprocessing started");
+            fetchCards();
+          } catch (err) {
+            toast.error(
+              err instanceof Error ? err.message : "Failed to start reprocessing"
+            );
+          }
+        },
         onDelete: async (card) => {
           await fetch(`/api/cards/${card.id}`, { method: "DELETE" });
           toast.success("Card deleted");

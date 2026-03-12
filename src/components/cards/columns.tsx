@@ -9,6 +9,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  RefreshCw,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -106,6 +107,7 @@ function getConfidenceClass(confidence: number | null): string {
 export type ColumnActions = {
   onViewDetails?: (card: ResponseCard) => void;
   onMarkReviewed?: (card: ResponseCard) => void;
+  onReprocess?: (card: ResponseCard) => void;
   onDelete?: (card: ResponseCard) => void;
 };
 
@@ -309,6 +311,15 @@ export function createColumns(actions?: ColumnActions): ColumnDef<ResponseCard>[
                 Mark reviewed
               </DropdownMenuItem>
             )}
+            {actions?.onReprocess &&
+              row.original.ocrStatus === "error" && (
+                <DropdownMenuItem
+                  onClick={() => actions.onReprocess?.(row.original)}
+                >
+                  <RefreshCw className="mr-2 size-4" />
+                  Reprocess
+                </DropdownMenuItem>
+              )}
             {actions?.onDelete && (
               <DropdownMenuItem
                 variant="destructive"

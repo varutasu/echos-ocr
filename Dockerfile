@@ -16,7 +16,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npx prisma generate && npm run build
+ENV NODE_OPTIONS="--max-old-space-size=1536"
+RUN npx prisma generate && next build
 
 # Standalone prisma install for runtime db push
 FROM base AS prisma-cli

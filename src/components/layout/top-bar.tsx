@@ -13,7 +13,6 @@ import {
   User,
   UserCircle,
   LifeBuoy,
-  Monitor,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,10 +24,6 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-  DropdownMenuGroup,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
@@ -44,6 +39,15 @@ export function TopBar() {
   const handleUploadClick = () => {
     window.dispatchEvent(new CustomEvent("open-upload-modal"));
   };
+
+  const cycleTheme = () => {
+    if (theme === "light") setTheme("dark");
+    else if (theme === "dark") setTheme("system");
+    else setTheme("light");
+  };
+
+  const themeLabel =
+    theme === "dark" ? "Dark" : theme === "light" ? "Light" : "System";
 
   return (
     <header className="glass-panel fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -139,49 +143,26 @@ export function TopBar() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem render={<Link href="/profile" />}>
-                <UserCircle className="size-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem render={<Link href="/settings" />}>
-                <Settings className="size-4" />
-                Settings
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
+            <DropdownMenuItem render={<Link href="/profile" />}>
+              <UserCircle className="size-4" />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem render={<Link href="/settings" />}>
+              <Settings className="size-4" />
+              Settings
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem
-                onClick={() => window.open("mailto:support@echoocr.app", "_blank")}
-              >
-                <LifeBuoy className="size-4" />
-                Support
-              </DropdownMenuItem>
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <Sun className="size-4 dark:hidden" />
-                  <Moon className="hidden size-4 dark:block" />
-                  Theme
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem onClick={() => setTheme("light")}>
-                    <Sun className="size-4" />
-                    Light
-                    {theme === "light" && <span className="ml-auto text-xs text-primary">✓</span>}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme("dark")}>
-                    <Moon className="size-4" />
-                    Dark
-                    {theme === "dark" && <span className="ml-auto text-xs text-primary">✓</span>}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme("system")}>
-                    <Monitor className="size-4" />
-                    System
-                    {theme === "system" && <span className="ml-auto text-xs text-primary">✓</span>}
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-            </DropdownMenuGroup>
+            <DropdownMenuItem
+              onClick={() => window.open("mailto:support@echoocr.app", "_blank")}
+            >
+              <LifeBuoy className="size-4" />
+              Support
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={cycleTheme}>
+              <Sun className="size-4 dark:hidden" />
+              <Moon className="hidden size-4 dark:block" />
+              Theme: {themeLabel}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive">
               <LogOut className="size-4" />

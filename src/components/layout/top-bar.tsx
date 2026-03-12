@@ -11,10 +11,13 @@ import {
   LogOut,
   ScanLine,
   User,
+  UserCircle,
+  LifeBuoy,
+  Monitor,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -22,15 +25,21 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
+  DropdownMenuGroup,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useUserProfile } from "@/lib/user-profile";
 
 export function TopBar() {
   const { theme, setTheme } = useTheme();
+  const { profile, initials } = useUserProfile();
 
   const handleUploadClick = () => {
     window.dispatchEvent(new CustomEvent("open-upload-modal"));
@@ -102,27 +111,77 @@ export function TopBar() {
             }
           >
             <Avatar size="sm">
+              {profile.avatarUrl && <AvatarImage src={profile.avatarUrl} alt={profile.displayName} />}
               <AvatarFallback>
-                <User className="size-3.5" />
+                {initials || <User className="size-3.5" />}
               </AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" sideOffset={8} className="w-48">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuContent align="end" sideOffset={8} className="w-56">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex items-center gap-3 px-0.5 py-1">
+                <Avatar>
+                  {profile.avatarUrl && <AvatarImage src={profile.avatarUrl} alt={profile.displayName} />}
+                  <AvatarFallback className="text-xs">
+                    {initials || <User className="size-4" />}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {profile.displayName || "Set up profile"}
+                  </p>
+                  {profile.email && (
+                    <p className="truncate text-xs text-muted-foreground">
+                      {profile.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              render={<Link href="/settings" />}
-            >
-              <Settings className="size-4" />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            >
-              <Sun className="size-4 dark:hidden" />
-              <Moon className="hidden size-4 dark:block" />
-              {theme === "dark" ? "Light Mode" : "Dark Mode"}
-            </DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuItem render={<Link href="/profile" />}>
+                <UserCircle className="size-4" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem render={<Link href="/settings" />}>
+                <Settings className="size-4" />
+                Settings
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                onClick={() => window.open("mailto:support@echoocr.app", "_blank")}
+              >
+                <LifeBuoy className="size-4" />
+                Support
+              </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Sun className="size-4 dark:hidden" />
+                  <Moon className="hidden size-4 dark:block" />
+                  Theme
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={() => setTheme("light")}>
+                    <Sun className="size-4" />
+                    Light
+                    {theme === "light" && <span className="ml-auto text-xs text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme("dark")}>
+                    <Moon className="size-4" />
+                    Dark
+                    {theme === "dark" && <span className="ml-auto text-xs text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme("system")}>
+                    <Monitor className="size-4" />
+                    System
+                    {theme === "system" && <span className="ml-auto text-xs text-primary">✓</span>}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive">
               <LogOut className="size-4" />

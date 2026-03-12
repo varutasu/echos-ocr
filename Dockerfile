@@ -17,7 +17,7 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS="--max-old-space-size=1536"
-RUN npx prisma generate && next build
+RUN npx prisma generate && npx next build
 
 # Standalone prisma install for runtime db push
 FROM base AS prisma-cli
